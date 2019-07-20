@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from constants import CONSTANTS
+from warcode.constants import CONSTANTS
 import game_map
 
 
@@ -65,7 +65,7 @@ class Unit:
         """
         self.set_action_taken()
         if self.distance_to(location) > CONSTANTS[self.unit_type]["ATTACK_DISTANCE"]:
-            raise Exception("You can't attack that far.".)
+            raise Exception("You can't attack that far.")
 
         for unit in self.game_map.get_units():
             if unit.distance_to(location) <= CONSTANTS[unit_type]["SPLASH_RADIUS"]:

@@ -2,7 +2,7 @@
 import os
 import json
 import random
-from constants import CONSTANTS
+from warcode.constants import CONSTANTS
 
 
 class Map:
@@ -134,14 +134,14 @@ def convert_from_number(item):
     Returns a class corresponding to the
     type of a square on a board.
     """
-    item_name = CONSTANTS["BOARD_DATA"][item[0]]
+    item_name = CONSTANTS["MAP_DATA"][item[0]]
     if item_name == "TREE":
         return Tree(item[1])
     elif item_name == "GOLD_MINE":
         return GoldMine(item[1])
-    elif item_name == "GOLD_MINE":
+    elif item_name == "BLOCK":
         return Block()
-    elif item_name == "GOLD_MINE":
+    elif item_name == "EMPTY":
         return Empty()
 
 
@@ -173,7 +173,7 @@ class Tree(Square):
         return actual_amount
 
     def represent(self):
-        return [CONSTANTS["TREE"], self.health]
+        return [CONSTANTS["MAP_DATA"]["TREE"], self.health]
 
 
 class GoldMine(Square):
@@ -189,17 +189,17 @@ class GoldMine(Square):
         return actual_amount
 
     def represent(self):
-        return [CONSTANTS["BOARD_DATA"]["GOLD_MINE"], self.health]
+        return [CONSTANTS["MAP_DATA"]["GOLD_MINE"], self.health]
 
 
 class Block(Square):
     def represent(self):
-        return [CONSTANTS["BOARD_DATA"]["BLOCK"]]
+        return [CONSTANTS["MAP_DATA"]["BLOCK"]]
 
 
 class Empty(Square):
     def represent(self):
-        return [CONSTANTS["BOARD_DATA"]["EMPTY"]]
+        return [CONSTANTS["MAP_DATA"]["EMPTY"]]
 
 
 class UnitOccupied(Square):
@@ -207,4 +207,4 @@ class UnitOccupied(Square):
         self.unit = unit
 
     def represent(self):
-        return [CONSTANTS["BOARD_DATA"]["UNIT_OCCUPIED"], self.unit.represent()]
+        return [CONSTANTS["MAP_DATA"]["UNIT_OCCUPIED"], self.unit.represent()]

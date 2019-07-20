@@ -3,7 +3,7 @@ import random
 from subprocess import Popen, PIPE
 import signal
 
-from constants import CONSTANTS
+from warcode.constants import CONSTANTS
 
 
 def open_script(player_file):
@@ -77,12 +77,12 @@ class Player:
         self.units.append(unit)
         self.game_map.add_unit(unit)
 
-    def remove_unit(self, unit)
-    """
+    def remove_unit(self, unit):
+        """
         Completely removes a unit from the game
         """
-    self.units.remove(unit)
-    self.game_map.remove_unit(unit)
+        self.units.remove(unit)
+        self.game_map.remove_unit(unit)
 
     def add_gold(self, amount):
         """

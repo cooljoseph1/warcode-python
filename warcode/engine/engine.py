@@ -2,7 +2,7 @@
 import json
 import random
 
-from constants import CONSTANTS
+from warcode.constants import CONSTANTS
 from game_map import Map
 from logger import Logger
 
