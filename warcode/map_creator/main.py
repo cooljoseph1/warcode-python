@@ -72,7 +72,7 @@ class Window(tkinter.Tk):
         menu.add_cascade(label="File", menu=file_menu, underline=0)
 
         # Set up tool menu
-        self.tools = ["Empty", "Block", "Gold Mine"]
+        self.tools = ["Empty", "Block", "Gold Mine", "Tree"]
         self.tool = tkinter.StringVar(self, self.tools[0])
         tool_menu = tkinter.Menu(menu, tearoff=0)
         for tool in self.tools:
@@ -138,6 +138,8 @@ class Window(tkinter.Tk):
             name = name_entry.get()
             popup.destroy()
             self.set_name(name)
+            self.title("*" + name + "*")
+            self.save_location = None
             self.canvas.destroy()
             self.canvas = Canvas((width, height), master=self)
             popup.destroy()
@@ -306,8 +308,8 @@ class Canvas(tkinter.Canvas):
         if starting_locations is None:
             self.starting_locations = [set() for i in range(6)] #6 players
         else:
-            self.starting_locations = [set(locations) for locations in
-                starting_locations]
+            self.starting_locations = [set(tuple(location) for location in locations)
+                for locations in starting_locations]
 
         self.tool_colors = {"Empty": "white", "Block": "gray50", "Gold Mine": "gold",
             "Tree": "forest green", "Team 1": "red", "Team 2": "royal blue",
@@ -379,7 +381,7 @@ class Canvas(tkinter.Canvas):
         Adds a location to a team's starting locations, returning True if the
         location was not already in there
         """
-        if (x, y) in starting_locations[team]:
+        if (x, y) in self.starting_locations[team]:
             return False
         else:
             self.starting_locations[team].add((x, y))
@@ -418,7 +420,7 @@ class Canvas(tkinter.Canvas):
 
         for team, positions in enumerate(self.starting_locations):
             if (x, y) in positions:
-                if "Team " + str(i + 1) != tool:
+                if "Team " + str(team + 1) != tool:
                     changed = True
                 positions.remove((x, y))
 
