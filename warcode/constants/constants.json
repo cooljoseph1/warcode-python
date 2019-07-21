@@ -4,6 +4,11 @@
     "BLOCK": 1,
     "TREE": 2,
     "GOLD_MINE": 3,
-    "UNIT_OCCUPIED": 4
+    "UNIT_OCCUPIED": 4,
+    "0": "EMPTY",
+    "1": "BLOCK",
+    "2": "TREE",
+    "3": "GOLD_MINE",
+    "4": "UNIT_OCCUPIED"
   }
 }

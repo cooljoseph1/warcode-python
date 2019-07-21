@@ -12,10 +12,10 @@ class Map:
 
         self.name = map_data["name"]
         self.starting_locations = map_data["starting_locations"]
-        self.available_starting_locations
+        self.available_starting_locations = self.starting_locations[:]
         self.board = [[convert(item) for item in line] for line in map_data["board"]]
-        self.width = len(self.board[0])
-        self.height = len(self.board)
+        self.width = map_data["width"]
+        self.height = map_data["height"]
         self.units = []
         self.unit_id_dict = dict()
 
