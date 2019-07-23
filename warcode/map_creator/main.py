@@ -1,4 +1,5 @@
 import os
+import math
 import json
 import tkinter
 from tkinter import filedialog, ttk, messagebox
@@ -22,7 +23,7 @@ class Window(tkinter.Tk):
 
         self.add_widgets(map_size, canvas_size)
         self.bind("<Button 1>", self.mouse_click)
-        self.bind("<B1 Motion>", self.mouse_move)
+        self.bind("<B1 Motion>", self.mouse_click)
         self.protocol("WM_DELETE_WINDOW", self.quit)
 
     def set_name(self, name):
@@ -57,34 +58,76 @@ class Window(tkinter.Tk):
         menu = tkinter.Menu(self)
 
         # Set up file menu
-        file_menu = tkinter.Menu(menu, tearoff=0)
-        file_menu.add_command(label="New", underline=0, command=self.new, accelerator="Ctrl+N")
+        self.file_menu = tkinter.Menu(menu, tearoff=0)
+        self.file_menu.add_command(label="New", underline=0, command=self.new, accelerator="Ctrl+N")
         self.bind_all("<Control-n>", self.new)
-        file_menu.add_command(label="Open", underline=0, command=self.open, accelerator="Ctrl+O")
+        self.file_menu.add_command(label="Open", underline=0, command=self.open, accelerator="Ctrl+O")
         self.bind_all("<Control-o>", self.open)
-        file_menu.add_command(label="Save", underline=0, command=self.save, accelerator="Ctrl+S")
+        self.file_menu.add_command(label="Save", underline=0, command=self.save, accelerator="Ctrl+S")
         self.bind_all("<Control-s>", self.save)
-        file_menu.add_command(label="Save As", underline=5, command=self.save_as, accelerator="Ctrl+Shift+S")
+        self.file_menu.add_command(label="Save As", underline=5, command=self.save_as, accelerator="Ctrl+Shift+S")
         self.bind_all("<Control-Shift-s>", self.save_as)
-        file_menu.add_command(label="Exit", underline=1, command=self.quit, accelerator="Ctrl+Q")
+        self.file_menu.add_command(label="Exit", underline=1, command=self.quit, accelerator="Ctrl+Q")
         self.bind_all("<Control-q>", self.quit)
         # Add file menu to menu
-        menu.add_cascade(label="File", menu=file_menu, underline=0)
+        menu.add_cascade(label="File", menu=self.file_menu, underline=0)
+
+        # Set up symmetry menu
+        symmetries = ["None", "Horizontal", "Vertical", "UR Diagonal", "DR Diagonal", "Radial"]
+        self.symmetry = tkinter.StringVar(self, symmetries[1])
+        self.symmetry_menu = tkinter.Menu(menu, tearoff=0)
+        for symmetry in symmetries:
+            self.symmetry_menu.add_radiobutton(label=symmetry, underline=0, variable=self.symmetry)
+
+        # Add symmetry menu to menu
+        menu.add_cascade(label="Symmetry", menu=self.symmetry_menu, underline=0)
+
+        # Set up players menu
+        player_options = [str(i) + " Players" for i in range(2, 7)]
+        self.num_players_string = tkinter.StringVar(self, player_options[0])
+        self.num_players = 2
+        self.player_menu = tkinter.Menu(menu, tearoff=0)
+        for player_option in player_options:
+            self.player_menu.add_radiobutton(label=player_option, underline=0,
+                variable=self.num_players_string, command=self.update_num_players)
+
+        # Add player menu to menu
+        menu.add_cascade(label="Players", menu=self.player_menu, underline=0)
 
         # Set up tool menu
-        self.tools = ["Empty", "Block", "Gold Mine", "Tree"]
-        self.tool = tkinter.StringVar(self, self.tools[0])
-        tool_menu = tkinter.Menu(menu, tearoff=0)
-        for tool in self.tools:
-            tool_menu.add_radiobutton(label=tool, underline=0, variable=self.tool)
-        for i in range(1, 7):
-            tool_menu.add_radiobutton(label="Team "+str(i), underline=5, variable=self.tool)
+        tools = ["Empty", "Block", "Gold Mine", "Tree"]
+        self.tool = tkinter.StringVar(self, tools[1])
+        self.tool_menu = tkinter.Menu(menu, tearoff=0)
+        for tool in tools:
+            self.tool_menu.add_radiobutton(label=tool, underline=0, variable=self.tool)
+        for i in range(1, self.num_players + 1):
+            self.tool_menu.add_radiobutton(label="Team "+str(i), underline=5, variable=self.tool)
         # Add tool menu to menu
-        menu.add_cascade(label="Tool", menu=tool_menu, underline=0)
+        menu.add_cascade(label="Tool", menu=self.tool_menu, underline=0)
 
         # Add menu bar to window
         self.config(menu=menu)
 
+    def update_num_players(self):
+        self.num_players = int(self.num_players_string.get()[0])
+        self.tool_menu.delete(4, "end")
+        for i in range(1, self.num_players + 1):
+            self.tool_menu.add_radiobutton(label="Team "+str(i), underline=5, variable=self.tool)
+        if self.tool.get()[-1].isdigit() and int(self.tool.get()[-1]) > self.num_players:
+            self.tool.set("Block")
+        self.symmetry_menu.delete(0, "end")
+        if self.num_players == 2:
+            symmetries = ["None", "Horizontal", "Vertical", "UR Diagonal", "DR Diagonal", "Radial"]
+        elif self.num_players == 4:
+            symmetries = ["None", "Horizontal/Vertical", "Radial"]
+        elif self.num_players in (3, 5, 6):
+            symmetries = ["None", "Radial"]
+
+        if self.symmetry.get() not in symmetries:
+            self.symmetry.set(symmetries[1])
+
+        for symmetry in symmetries:
+            self.symmetry_menu.add_radiobutton(label=symmetry, underline=0, variable=self.symmetry)
 
     def initialize_canvas(self, map_size, canvas_size):
         """
@@ -96,7 +139,7 @@ class Window(tkinter.Tk):
         """
         Create a new map
         """
-        if not self.check_unsaved():
+        if not self.check_unsaved("New"):
             return
 
         popup = tkinter.Toplevel(self)
@@ -114,12 +157,12 @@ class Window(tkinter.Tk):
         width_entry = ttk.Entry(input_frame, font=LARGE_FONT)
         height_entry = ttk.Entry(input_frame, font=LARGE_FONT)
 
-        name_label.grid(row=0, column=0)
-        width_label.grid(row=1, column=0)
-        height_label.grid(row=2, column=0)
-        name_entry.grid(row=0, column=1)
-        width_entry.grid(row=1, column=1)
-        height_entry.grid(row=2, column=1)
+        name_label.grid(row=0, column=0, padx=5, pady=5)
+        width_label.grid(row=1, column=0, padx=5, pady=5)
+        height_label.grid(row=2, column=0, padx=5, pady=5)
+        name_entry.grid(row=0, column=1, padx=5, pady=5)
+        width_entry.grid(row=1, column=1, padx=5, pady=5)
+        height_entry.grid(row=2, column=1, padx=5, pady=5)
 
         def create_new(event=None):
             try:
@@ -190,6 +233,8 @@ class Window(tkinter.Tk):
 
         self.canvas.pack()
         self.set_name(data["name"])
+        self.num_players_string.set(str(data["players"]) + " Players")
+        self.update_num_players()
         self.set_unsaved_changes(False)
 
     def save(self, event=None):
@@ -202,6 +247,7 @@ class Window(tkinter.Tk):
             file = open(self.save_location, "w")
             data = {
                 "name": self.name,
+                "players": self.num_players,
                 "width": self.canvas.get_map_width(),
                 "height": self.canvas.get_map_height(),
                 "starting_locations": self.canvas.get_starting_locations(),
@@ -229,6 +275,7 @@ class Window(tkinter.Tk):
 
         data = {
             "name": self.name,
+            "players": self.num_players,
             "width": self.canvas.get_map_width(),
             "height": self.canvas.get_map_height(),
             "starting_locations": self.canvas.get_starting_locations(),
@@ -256,18 +303,62 @@ class Window(tkinter.Tk):
         else:
             return messagebox.askokcancel(title, message)
 
-    def mouse_click(self, event):
+    def mouse_click(self, event, diff=1):
         """
-        Process the user clicking somewhere
+        Process the user clicking somewhere, telling the canvas and map to update
+        places according to the symmetry, number of players, and tool
         """
-        if self.canvas.set_square_at_canvas_position(event.x, event.y, self.tool.get()):
-            self.set_unsaved_changes(True)
+        def next_player(player_name, diff):
+            num = int(player_name[-1])
+            num += diff
+            if num > self.num_players:
+                num -= self.num_players
+            return "Team " + str(num)
 
-    def mouse_move(self, event):
-        """
-        Processes the user moving their mouse while holding it down
-        """
-        if self.canvas.set_square_at_canvas_position(event.x, event.y, self.tool.get()):
+        position = (event.x, event.y)
+        positions = [position]
+        if self.symmetry.get() == "None":
+            pass
+        elif self.symmetry.get() == "Horizontal":
+            positions.append((event.x, self.canvas.winfo_height() - event.y))
+        elif self.symmetry.get() == "Vertical":
+            positions.append((self.canvas.winfo_width() - event.x, event.y))
+
+        elif self.symmetry.get() == "Radial":
+            center = (self.canvas.winfo_width()/2, self.canvas.winfo_height()/2)
+            displacement = (position[0] - center[0], position[1] - center[1])
+            cos_angle = math.cos(2*math.pi/self.num_players)
+            sin_angle = math.sin(2*math.pi/self.num_players)
+            for i in range(1, self.num_players):
+                displacement = (
+                    cos_angle*displacement[0] - sin_angle*displacement[1],
+                    sin_angle*displacement[0] + cos_angle*displacement[1]
+                )
+                positions.append((displacement[0] + center[0], displacement[1] + center[1]))
+
+        elif self.symmetry.get() == "DR Diagonal":
+            positions.append((event.y, event.x))
+        elif self.symmetry.get() == "UR Diagonal":
+            positions.append((self.winfo_height() - event.y, self.winfo_width() - event.x))
+        elif self.symmetry.get() == "Horizontal/Vertical":
+            positions.append((self.winfo_width() - event.x, event.y))
+            positions.append((self.winfo_width() - event.x, self.winfo_height() - event.y))
+            positions.append((event.x, self.winfo_height() - event.y))
+
+        if self.tool.get().startswith("Team"):
+            positions_changed = [
+                self.canvas.set_square_at_canvas_position(
+                    position[0], position[1], next_player(self.tool.get(), i)
+                ) for i, position in enumerate(positions)
+            ]
+        else:
+            positions_changed = [
+                self.canvas.set_square_at_canvas_position(
+                    position[0], position[1], self.tool.get()
+                ) for position in positions
+            ]
+
+        if  any(positions_changed):
             self.set_unsaved_changes(True)
 
 
@@ -309,7 +400,7 @@ class Canvas(tkinter.Canvas):
             self.starting_locations = [set() for i in range(6)] #6 players
         else:
             self.starting_locations = [set(tuple(location) for location in locations)
-                for locations in starting_locations]
+                for locations in starting_locations] + [set() for i in range(6 - len(starting_locations))]
 
         self.tool_colors = {"Empty": "white", "Block": "gray50", "Gold Mine": "gold",
             "Tree": "forest green", "Team 1": "red", "Team 2": "royal blue",
@@ -381,10 +472,10 @@ class Canvas(tkinter.Canvas):
         Adds a location to a team's starting locations, returning True if the
         location was not already in there
         """
-        if (x, y) in self.starting_locations[team]:
+        if (x, y) in self.starting_locations[team - 1]:
             return False
         else:
-            self.starting_locations[team].add((x, y))
+            self.starting_locations[team - 1].add((x, y))
 
     def get_color(self, num):
         type = CONSTANTS["MAP_DATA"][str(num)]
@@ -415,28 +506,33 @@ class Canvas(tkinter.Canvas):
 
         if self.game_map[y][x] != CONSTANTS["MAP_DATA"][type]:
             changed = True
-        self.game_map[y][x] = CONSTANTS["MAP_DATA"][type]
-        self.itemconfig(self.squares[y][x], fill=self.tool_colors[tool])
+            self.game_map[y][x] = CONSTANTS["MAP_DATA"][type]
+
+        if self.itemcget(self.squares[y][x], "fill") != self.tool_colors[tool]:
+            self.itemconfig(self.squares[y][x], fill=self.tool_colors[tool])
 
         for team, positions in enumerate(self.starting_locations):
             if (x, y) in positions:
                 if "Team " + str(team + 1) != tool:
                     changed = True
-                positions.remove((x, y))
+                    positions.remove((x, y))
 
         if tool in ("Team 1", "Team 2", "Team 3", "Team 4", "Team 5", "Team 6"):
             if self.add_starting_location(x, y, int(tool[-1])):
                 changed = True
+
         return changed
 
     def set_square_at_canvas_position(self, canvas_x, canvas_y, tool):
         """
-        Changes a square from a cnavas position, returning True if the square
+        Changes a square from a canvas position, returning True if the square
         changes in any way.
         """
         x, y = self.scale_back((canvas_x, canvas_y))
         if 0 <= x < self.map_size[0] and 0 <= y < self.map_size[1]:
             return self.set_square(x, y, tool)
+        else:
+            return False
 
     def scaled_x(self, x):
         """
