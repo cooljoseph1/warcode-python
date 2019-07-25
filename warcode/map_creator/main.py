@@ -6,7 +6,7 @@ from tkinter import filedialog, ttk, messagebox
 
 from warcode.constants import CONSTANTS
 
-__my_dir__ = os.path.dirname(os.path.realpath(__file__))
+_my_dir = os.path.dirname(os.path.realpath(__file__))
 
 
 class Window(tkinter.Tk):
@@ -212,7 +212,7 @@ class Window(tkinter.Tk):
         if not self.check_unsaved("Open"):
             return
 
-        initial_directory = os.path.abspath(os.path.join(__my_dir__, os.pardir, "maps"))
+        initial_directory = os.path.abspath(os.path.join(_my_dir, os.pardir, "maps"))
         mask = [("Warcode Maps", "*.wcm"), ("All Files", "*.*")]
         file = filedialog.askopenfile(initialdir=initial_directory,
             filetypes=mask, mode="r")
@@ -263,7 +263,7 @@ class Window(tkinter.Tk):
         """
         Save our map as a different file
         """
-        initial_directory = os.path.abspath(os.path.join(__my_dir__, os.pardir, "maps"))
+        initial_directory = os.path.abspath(os.path.join(_my_dir, os.pardir, "maps"))
         mask = [("Warcode Maps", "*.wcm"), ("All Files", "*.*")]
         file = filedialog.asksaveasfile(initialdir=initial_directory,
             initialfile=self.name, filetypes=mask, defaultextension=".wcm",

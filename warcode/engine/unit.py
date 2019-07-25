@@ -172,5 +172,6 @@ class Unit:
         return {
             "id": self.get_id(),
             "health": self.get_health(),
-            "unit_type": self.get_unit_type()
+            "unit_type": self.get_unit_type(),
+            "team": self.player.get_id()
         }

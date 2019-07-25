@@ -47,7 +47,7 @@ class Engine:
         Goes through each player's turn
         """
         for player in self.players:
-            player.turn()
+            self.process_actions(player.turn())
 
         for player in self.players[:]:
             if not player.is_alive():

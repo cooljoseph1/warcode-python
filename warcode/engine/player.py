@@ -29,7 +29,7 @@ class Player:
 
     def turn(self):
         """
-        Player's turn
+        Complete a player's turn, returning the actions it does
         """
         # TODO:  Implement timing
         self.reset()
@@ -37,7 +37,7 @@ class Player:
         print(self.game_map.to_string(self.get_visible_locations()), file=self.process.stdin)
         actions = self.process.stdout.readline().strip()
         self.process.send_signal(signal.SIGSTOP)
-        self.engine.process_actions(self, actions)
+        return actions
 
     def get_id(self):
         """

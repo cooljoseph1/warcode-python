@@ -125,7 +125,7 @@ class Map:
                                for row in self.board])
         else:
             return json.dumps([[convert_to_json(square) if (x, y) in
-                                visible_locations else None for x, square in enumerate(row)]
+                                visible_locations else convert_to_json(Invisible()) for x, square in enumerate(row)]
                                for y, row in enumerate(self.board)])
 
 
@@ -134,16 +134,15 @@ def convert_from_number(item):
     Returns a class corresponding to the
     type of a square on a board.
     """
-    item_name = CONSTANTS["MAP_DATA"][item[0]]
-    if item_name == "TREE":
-        return Tree(item[1])
-    elif item_name == "GOLD_MINE":
-        return GoldMine(item[1])
-    elif item_name == "BLOCK":
-        return Block()
-    elif item_name == "EMPTY":
-        return Empty()
 
+    if item == CONSTANTS["MAP_DATA"]["TREE"]:
+        return Tree(item[1])
+    elif item == CONSTANTS["MAP_DATA"]["GOLD_MINE"]:
+        return GoldMine(item[1])
+    elif item == CONSTANTS["MAP_DATA"]["BLOCK"]:
+        return Block()
+    elif item == CONSTANTS["MAP_DATA"]["EMPTY"]:
+        return Empty()
 
 def convert_to_json(square):
     """
@@ -161,6 +160,9 @@ class Square:
 
 
 class Tree(Square):
+    """
+    Represents a tree
+    """
     def __init__(self, health=150):
         self.health = health
 
@@ -177,6 +179,9 @@ class Tree(Square):
 
 
 class GoldMine(Square):
+    """
+    Represents a gold mine
+    """
     def __init__(self, health=500):
         self.health = health
 
@@ -193,13 +198,26 @@ class GoldMine(Square):
 
 
 class Block(Square):
+    """
+    Represents a square that is impassable
+    """
     def represent(self):
         return [CONSTANTS["MAP_DATA"]["BLOCK"]]
 
 
 class Empty(Square):
+    """
+    Represents an empty square
+    """
     def represent(self):
         return [CONSTANTS["MAP_DATA"]["EMPTY"]]
+
+class Invisible(Square):
+    """
+    Represents a square that cannot be seen by the player
+    """
+    def represent(self):
+        return [CONSTANTS["MAP_DATA"]["INVISIBLE"]]
 
 
 class UnitOccupied(Square):
