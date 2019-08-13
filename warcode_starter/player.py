@@ -10,6 +10,10 @@ class Player:
         """
         self.name = name
         self.turn = 0
+        self.gold = 0
+        self.wood = 0
+        self.actions = []
+
         self._first_turn()
         while True:
             self._turn()
@@ -27,11 +31,97 @@ class Player:
         """
         pass
 
+    def _first_turn(self):
+        """
+        Prepare self for the first turn and then run the first turn
+        """
+        self.turn += 1
+        input_data = json.loads(self.input())
+        self.id = input_data["id"]
+        self.num_players = input_data["all_num_players"]
+        self.all_starting_locations = input_data["all_starting_locations"]
+        self.starting_locations = input_data["starting_locations"]
+        self.map = Map(input_data["map"])
+
+        self.first_turn()
+
+        self.output(self.name)
+
+    def _turn(self):
+        """
+        Prepare self for a turn and then run the turn
+        """
+        self.turn += 1
+        input_data = json.loads(self.input())
+        self.units = {int(id): Unit(int(id), data, self) for id, data in input_data["units"].items()}
+        self.gold_mines = {int(id): GoldMine(int(id), data, self) for id, data in input_data["gold_mines"].items()}
+        self.trees = {int(id): Tree(int(id), data, self) for id, data in input_data["trees"].items()}
+        self.map = Map(input_data["map"], units=self.units,
+            gold_mines=self.gold_mines, trees=self.trees)
+        self.actions = []
+
+        self.turn()
+
+        self.output(json.dumps(self.actions))
+
+    def add_unit(self, unit):
+        """
+        Adds a unit to our units
+        """
+        self.map.set_square(unit.get_x(), unit.get_y(), unit.get_id())
+        self.units[unit.get_id()] = unit
+
+    def remove_unit(self, unit):
+        """
+        Removes a unit from our units
+        """
+        self.map.set_square(unit.get_x(), unit.get_y(), constants.EMPTY)
+        del self.units[unit.get_id()]
+
+    def get_unit_at(self, x, y):
+        """
+        Returns the unit at the position (x, y) and None if there is no unit at
+        the position
+        """
+        for unit in self.units.items():
+            if unit.get_position() == (x, y):
+                return unit
+
+    def remove_tree(self, tree):
+        """
+        Removes a tree from our trees
+        """
+        self.map.set_square(tree.get_x(), tree.get_y(), constants.EMPTY)
+        del self.trees[tree.get_id()]
+
+    def get_tree_at(self, x, y):
+        """
+        Returns the tree at the position (x, y) and None if there is no tree
+        at the position
+        """
+        for tree in self.trees.items():
+            if tree.get_position() == (x, y):
+                return tree
+
+    def remove_mine(self, gold_mine):
+        """
+        Removes a gold mine from our mines
+        """
+        self.map.set_square(gold_mine.get_x(), gold_mine.get_y(), constants.BLOCK)
+        del self.gold_mines[gold_mine.get_id()]
+
+    def get_gold_mine_at(self, x, y):
+        """
+        Returns the gold mine at the position (x, y) and None if there is no
+        gold mine at the position
+        """
+
     def move(self, unit, x, y):
         """
         Add a move action to our actions and update ourself to represent the
         change
         """
+
         self.map.set_square(unit.get_x(), unit.get_y(), constants.EMPTY)
         self.map.set_square(x, y, unit.get_id())
         unit.set_position(x, y)
@@ -50,9 +140,9 @@ class Player:
         change
         """
 
-        for other in self.units + self.trees + self.gold_mines:
-            if other.distance_to(x, y) <= unit.get_unit_type().get_splash_radius():
-                other.damage(unit.get_unit_type().get_attackdamage())
+        for other in list(self.units) + list(self.trees) + list(self.gold_mines):
+            if other.distance_to(x, y) <= unit.get_unit_type().get_attack_splash():
+                other.damage(unit.get_unit_type().get_attack_damage())
 
         self.actions.append({
             "attack": {
@@ -68,10 +158,12 @@ class Player:
         change
         """
 
-        new_unit = Unit(unit_type, x, y, -1)
+        # Note that the id generated is negative.  This is because the unit
+        # cannot do any actions on its first turn.
+        new_unit = Unit(unit_type, x, y, -len(self.units))
         self.gold -= unit_type.get_gold_cost()
         self.wood -= unit_type.get_wood_cost()
-        self.units.append(new_unit)
+        self.add_unit(new_unit)
 
         self.actions.append({
             "build": {
@@ -115,10 +207,6 @@ class Player:
         tree.subtract_wood(constants.CUT_AMOUNT)
         unit.add_wood(constants.CUT_AMOUNT)
 
-        if tree.get_wood() <= 0:
-            map.set_square(x, y, constants.EMPTY)
-            self.trees.remove(tree)
-
         self.actions.append({
             "cut": {
                 "unit": unit.get_id(),
@@ -146,37 +234,17 @@ class Player:
                 "x": x,
                 "y": y
             }
+        })
 
-    def _first_turn(self):
+    def log(self, message):
         """
-        Prepare self for the first turn and then run the first turn
+        Log a message to the warcode engine
         """
-        self.turn += 1
-        input_data = json.loads(self.input())
-        self.id = input_data["id"]
-        self.num_players = input_data["all_num_players"]
-        self.all_starting_locations = input_data["all_starting_locations"]
-        self.starting_locations = input_data["starting_locations"]
-        self.map = Map(input_data["map"])
-
-        self.first_turn()
-
-        self.output(self.name)
-
-    def _turn(self):
-        """
-        Prepare self for a turn and then run the turn
-        """
-        self.turn += 1
-        input_data = json.loads(self.input())
-        self.units = [Unit(unit) for unit in input_data["units"]]
-        self.map = Map(input_data["map"], gold_mines=input_data["gold_mines"],
-            trees=input_data["trees"], units=self.units)
-        self.actions = []
-
-        self.turn()
-
-        self.output(json.dumps(self.actions))
+        self.actions.append({
+            "log": {
+                "message": message
+            }
+        })
 
     def output(self, string):
         """

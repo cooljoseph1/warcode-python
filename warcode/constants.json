@@ -5,8 +5,12 @@
     "GOLD_MINE": "G",
     "INVISIBLE": "I",
 
-    "CUT_AMOUNT": 10,
-    "MINE_AMOUNT": 20,
+    "MINE_AMOUNT": 10,
+    "CUT_AMOUNT": 5,
+    "GOLD_MINE_HEALTH": 500,
+    "TREE_HEALTH": 200,
+    "INITIAL_GOLD": 300,
+    "INITIAL_WOOD": 100,
 
     "PEASANT": {
         "initial_health": 50,
@@ -106,5 +110,17 @@
         "visiblity_distance": 100,
         "gold_cost": 80,
         "wood_cost": 70
+    }
+
+    "ALLOWED_CREATIONS": {
+        "ARCHER": [],
+        "CASTLE": ["ARCHER", "KNIGHT", "MAGE", "PEASANT"],
+        "FORTRESS": ["ARCHER", "KNIGHT", "MAGE", "PEASANT"],
+        "KNIGHT": [],
+        "LANDMINE": [],
+        "MAGE": ["TOTEM"],
+        "PEASANT": ["CASTLE", "LANDMINE", "TOWER"],
+        "TOTEM": [],
+        "TOWER": []
     }
 }

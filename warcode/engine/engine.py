@@ -2,8 +2,9 @@
 import json
 import random
 
-from warcode.constants import CONSTANTS
-from game_map import Map
+from warcode import constants
+from warcode.things import Unit, GoldMine, Tree, Team
+from warcode.game_map import Map
 from logger import Logger
 
 
@@ -12,13 +13,31 @@ class Engine:
     Overall engine class.  Runs a game.
     """
 
-    def __init__(self, map_name, players, verbose=True, very_verbose=False):
+    def __init__(self, map_name, players, verbose=True):
         self.game_map = Map(map_name)
-        self.ids_given = set()
-        self.players = players[:]
-        self.player_id_dict = dict((player.get_id(), player) for player in self.players)
         self.verbose = verbose
-        self.very_verbose = very_verbose and verbose
+
+        self.ids_given = set()
+        self.things = {}
+        self.teams = {}
+        for i in range(game_map.get_num_teams()):
+            self.create_team()
+
+        self.units = {}
+        for unit in self.game_map.get_initial_units():
+            self.create_unit(unit["x"], unit["y"], unit["type"], teams[unit["team"]])
+
+        self.gold_mines = {}
+        for x, y in self.game_map.get_gold_mine_locations():
+            self.create_gold_mine(x, y)
+        self.trees = {}
+        for x, y in self.game_map.get_tree_locations():
+            self.create_tree(x, y)
+
+        ######################## PROCESS PLAYERS HERE ##########################
+
+        ########################################################################
+
         self.logger = Logger()
         self.finished = False
         self.turn = 0
@@ -34,6 +53,9 @@ class Engine:
 
         self.ids_given.add(id)
         return id
+
+    def create_team(self):
+
 
     def play(self):
         """
@@ -137,11 +159,11 @@ class Engine:
         """
         unit.attack(location)
 
-    def create(self, creator, unit_type, location):
+    def create(self, unit, unit_type, location):
         """
         Processes a CREATE action
         """
-        creator.create(unit_type, location)
+        unit.create(unit_type, location)
 
     def move(self, unit, location):
         """

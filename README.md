@@ -41,7 +41,9 @@ The player's first turn begins by the engine sending it the following json:
         [<x>, <y>],
         ...
     ]
-    "map": <map>
+    "map": <map>,
+    "trees": <trees>,
+    "gold_mines": <gold_mines>
 }
 ```
 
@@ -60,21 +62,22 @@ form:
         ...
     }
     "map": <map>,
-    "gold_mines": [
-        {
+    "gold_mines": {
+        "<id_1>": {
             "gold": <gold_left>,
             "x": <x_position>,
             "y": <y_position>
         },
         ...
-    ]
-    "trees": [
-        {
+    }
+    "trees": {
+        "<id_1>": {
             "wood": <wood_left>,
             "x": <x_position>,
             "y": <y_position>
-        }
-    ]
+        },
+        ...
+    }
 
 }
 ```
@@ -100,8 +103,8 @@ where `<action_1>`, `<action_2>`, etc. are certain actions described more below.
 The empty map is sent as a two dimensional array, where each square is either an
 integer from `0` to `2^32 - 1` or one of the characters `[I, B, E, G, T]`.  An
 integer represents the id of the unit at that location.  The letters `I`, `B`,
-`E`, `G`, and `T` represent an `INVISIBLE`, `BLOCK`, `GOLD_MINE`, or `TREE`
-respectively.
+`E`, `G`, and `T` represent an `INVISIBLE`, `BLOCK`, `EMPTY`, `GOLD_MINE`, or
+`TREE` square, respectively.
 
 ### Actions
 There are _ kinds of actions that a unit can do.  Each unit can only taken one
@@ -169,5 +172,13 @@ Mines gold from a gold mine.  Json format:
     "unit": <unit_id>,
     "x": <x_position>,
     "y": <y_position>
+}
+```
+
+#### Log
+Logs a message.  Json format:
+```
+"log": {
+    "message": <message>
 }
 ```
