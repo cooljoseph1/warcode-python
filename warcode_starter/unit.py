@@ -2,15 +2,16 @@
 from warcode import constants
 
 class Unit:
-    def __init__(self, id, data, player):
+    def __init__(self, player, id, x, y, type, team, health=None, gold=None, wood=None):
+        self.player = player
         self.id = id
-        self.unit_type = getattr(constants, data["type"])
-        self.health = data["health"]
-        self.team = data["team"]
+        self.unit_type = getattr(constants, type)
+        self.team = team
         self.x = x
         self.y = y
-
-        self.player = player
+        self.health = health if health is not None else self.unit_type.get_initial_health()
+        self.gold = gold or 0
+        self.wood = wood or 0
 
     def get_id(self):
         return self.id

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import random
-from subprocess import Popen, PIPE
-import signal
+from subprocess import PIPE
+from psutil import Popen
+import os
 
-from warcode.constants import CONSTANTS
+my_dir = os.path.realpath(os.path.dirname(__file__))
 
 
 def open_script(player_file):
@@ -11,105 +12,72 @@ def open_script(player_file):
     Runs a player file.  Returns the process of the player file script.
     """
 
-    return Popen([player_file], stdin=PIPE, stdout=PIPE)
+    return Popen(["python", player_file], stdin=PIPE, stdout=PIPE)
 
 
 class Player:
-    def __init__(self, engine, player_file):
-        self.engine = engine
-        self.id = self.engine.create_id()
-        self.gold = CONSTANTS["INITIAL_GOLD"]
-        self.wood = CONSTANTS["INITIAL_WOOD"]
-        self.game_map = self.engine.get_game_map()
-        self.initial_positions = self.game_map.get_starting_location()
+    def __init__(self, player_name):
+        player_file = os.path.join(my_dir, os.pardir, "players", player_name)
         self.process = open_script(player_file)
-        self.process.send_signal(signal.SIGSTOP)
-        self.name = self.process.stdout.readline().strip()
-        self.units = []
+        self.process.suspend()
+        self.time = 1
 
-    def turn(self):
+    def set_team(self, team):
+        self.team = team
+
+    def get_team(self):
+        return self.team
+
+    def get_time(self):
+        return self.time
+
+    def get_name(self):
+        return self.name
+
+    def first_turn(self, data):
         """
-        Complete a player's turn, returning the actions it does
+        Pass data to player and complete the first turn
+        """
+        self.process.resume()
+        self.process.stdin.write((data + "\n").encode('utf-8'))
+        self.process.stdin.flush()
+        self.name = self.process.stdout.readline().strip()
+        self.process.suspend()
+
+    def turn(self, data):
+        """
+        Pass data to player and return its actions for a turn
         """
         # TODO:  Implement timing
         self.reset()
-        self.process.send_signal(signal.SIGCONT)
-        print(self.game_map.to_string(self.get_visible_locations()), file=self.process.stdin)
+        self.process.resume()
+        self.process.stdin.write((data + "\n").encode('utf-8'))
+        self.process.stdin.flush()
         actions = self.process.stdout.readline().strip()
-        self.process.send_signal(signal.SIGSTOP)
+        self.process.suspend()
         return actions
 
-    def get_id(self):
-        """
-        Returns unit's unique id
-        """
-        return self.id
-
-    def get_engine(self):
-        """
-        Returns the overall engine controlling the player
-        """
-        return self.engine
-
-    def get_game_map(self):
-        """
-        Returns the overall game map
-        """
-        return self.game_map
-
-    def get_visible_locations(self):
-        """
-        Returns all visible locations on the map
-        """
-        visible_locations = set(location for location in
-                                game_map.get_all_locations() if self.is_visible(location))
-
-    def is_visible(self, location):
-        """
-        Returns if a location is visible to the player
-        """
-        return any(unit.is_visible(location) for unit in units)
-
-    def add_unit(self, unit):
-        """
-        Adds a new unit to ourself and the game
-        """
-        self.units.append(unit)
-        self.game_map.add_unit(unit)
-
-    def remove_unit(self, unit):
-        """
-        Completely removes a unit from the game
-        """
-        self.units.remove(unit)
-        self.game_map.remove_unit(unit)
-
-    def add_gold(self, amount):
-        """
-        Adds gold to the player's supply
-        """
-        self.gold += amount
-
-    def add_wood(self, amount):
-        """
-        Adds wood to the player's supply
-        """
-        self.wood += amount
-
     def is_alive(self):
-        return len(self.units) > 0
+        return len(self.team.get_units()) > 0
 
     def reset(self):
         """
         Prepare ourself for our turn
         """
-        for unit in self.units:
+        for unit in self.team.get_units().values():
             unit.reset()
 
     def clean_up(self, winner):
         """
         Clean up at the end of the game
         """
-        print("GAME FINISHED, WINNER {}".format(winner), file=self.process.stdin)
-        self.process.stdin.close()
-        self.process.stdout.close()
+        print("{} won the game!".format(winner), file=self.process.stdin)
+        self.process.kill()
+        #self.process.stdin.close()
+        #self.process.stdout.close()
+
+    def to_dict(self):
+        return {
+            "name": self.name,
+            "team": self.team.get_id()
+        }

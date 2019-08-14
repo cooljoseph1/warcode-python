@@ -53,3 +53,11 @@ class Tree:
         Returns the distance from this tree to a location
         """
         return (self.x - x)**2 + (self.y - y)**2
+
+    def to_dict(self):
+        return {
+            "id": self.get_id(),
+            "wood": self.get_wood(),
+            "x": self.get_x(),
+            "y": self.get_y()
+        }

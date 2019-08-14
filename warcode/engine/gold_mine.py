@@ -56,3 +56,11 @@ class GoldMine:
         Returns the distance squared from this gold mine to a location
         """
         return (self.x - x)**2 + (self.y - y)**2
+
+    def to_dict(self):
+        return {
+            "id": self.get_id(),
+            "gold": self.get_gold(),
+            "x": self.get_x(),
+            "y": self.get_y()
+        }

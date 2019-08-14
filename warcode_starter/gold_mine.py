@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 class GoldMine:
-    def __init__(self, id, data, player):
-        self.id = id
-        self.gold = data["gold"]
-        self.x = data["x"]
-        self.y = data["y"]
+    def __init__(self, player, id, gold, x, y):
         self.player = player
+        self.id = id
+        self.gold = gold
+        self.x = x
+        self.y = y
 
     def get_x(self):
         return self.x

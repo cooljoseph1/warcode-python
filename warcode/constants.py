@@ -2,16 +2,15 @@
 import json
 import os
 
-_my_dir_ = os.path.realpath(os.path.dirname(__file__))
+my_dir = os.path.realpath(os.path.dirname(__file__))
 
-with open(os.path.join(_my_dir_, "constants.json")) as f:
+with open(os.path.join(my_dir, "constants.json")) as f:
     _data = json.load(f)
 
 EMPTY = _data["EMPTY"]
 BLOCK = _data["BLOCK"]
 TREE = _data["TREE"]
 GOLD_MINE = _data["GOLD_MINE"]
-UNIT_OCCUPIED = _data["UNIT_OCCUPIED"]
 INVISIBLE = _data["INVISIBLE"]
 
 MINE_AMOUNT = _data["MINE_AMOUNT"]
@@ -21,9 +20,9 @@ TREE_HEALTH = _data["TREE_HEALTH"]
 INITIAL_GOLD = _data["INITIAL_GOLD"]
 INITIAL_WOOD = _data["INITIAL_WOOD"]
 
-class _Unit:
+class UnitType:
     def __init__(self, name, initial_health, movement_speed, min_attack_distance,
-            max_attack_distance, attack_damage, attack_splash, visiblity_distance,
+            max_attack_distance, attack_damage, attack_splash, visibility_distance,
             gold_cost, wood_cost):
         self.name = name
         self.initial_health = initial_health
@@ -32,7 +31,7 @@ class _Unit:
         self.max_attack_distance = max_attack_distance
         self.attack_damage = attack_damage
         self.attack_splash = attack_splash
-        self.visiblity_distance = visiblity_distance
+        self.visibility_distance = visibility_distance
         self.gold_cost = gold_cost
         self.wood_cost = wood_cost
 
@@ -70,16 +69,16 @@ class _Unit:
         return self.name
 
 
-ARCHER = _Unit("ARCHER", **_data["ARCHER"])
-CASTLE = _Unit("CASTLE", **_data["CASTLE"])
-FORTRESS = _Unit("FORTRESS", **_data["FORTRESS"])
-KNIGHT = _Unit("KNIGHT", **_data["KNIGHT"])
-LANDMINE = _Unit("LANDMINE"**_data["MINE"])
-MAGE = _Unit("MAGE", **_data["MAGE"])
-PEASANT = _Unit("PEASANT", **_data["PEASANT"])
-TOTEM = _Unit("TOTEM", **_data["TOTEM"])
-TOWER = _Unit("TOWER", **_data["TOWER"])
+ARCHER = UnitType(**_data["ARCHER"])
+CASTLE = UnitType(**_data["CASTLE"])
+FORTRESS = UnitType(**_data["FORTRESS"])
+KNIGHT = UnitType(**_data["KNIGHT"])
+LANDMINE = UnitType(**_data["LANDMINE"])
+MAGE = UnitType(**_data["MAGE"])
+PEASANT = UnitType(**_data["PEASANT"])
+TOTEM = UnitType(**_data["TOTEM"])
+TOWER = UnitType(**_data["TOWER"])
 
 ALLOWED_CREATIONS = {}
 for unit, allowed_units in _data["ALLOWED_CREATIONS"].items():
-    ALLOWED_CREATIONS[locals()[unit]] = set(locals()[other] for other in allowed_units)
+    ALLOWED_CREATIONS[globals()[unit]] = set(globals()[other] for other in allowed_units)

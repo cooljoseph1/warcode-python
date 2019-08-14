@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import json
+import traceback
 
 from warcode import constants
+from warcode_starter import Map, Unit, GoldMine, Tree
 
 class Player:
     def __init__(self, name="Default"):
@@ -9,7 +11,7 @@ class Player:
         Construction of a player.  Pass your name in the super construct.
         """
         self.name = name
-        self.turn = 0
+        self.turn_number = 0
         self.gold = 0
         self.wood = 0
         self.actions = []
@@ -35,15 +37,21 @@ class Player:
         """
         Prepare self for the first turn and then run the first turn
         """
-        self.turn += 1
+        self.turn_number += 1
         input_data = json.loads(self.input())
-        self.id = input_data["id"]
-        self.num_players = input_data["all_num_players"]
-        self.all_starting_locations = input_data["all_starting_locations"]
-        self.starting_locations = input_data["starting_locations"]
+        self.teams = input_data["teams"]
+        self.team = input_data["team_id"]
+        self.num_players = input_data["num_players"]
+        self.units = {}
+        for data in input_data["starting_units"]:
+            unit = Unit(self, **data)
+            self.units[unit.id] = unit
         self.map = Map(input_data["map"])
 
-        self.first_turn()
+        try:
+            self.first_turn()
+        except Exception:
+            self.log(traceback.extract_stack())
 
         self.output(self.name)
 
@@ -51,18 +59,36 @@ class Player:
         """
         Prepare self for a turn and then run the turn
         """
-        self.turn += 1
+        self.turn_number += 1
+
         input_data = json.loads(self.input())
-        self.units = {int(id): Unit(int(id), data, self) for id, data in input_data["units"].items()}
-        self.gold_mines = {int(id): GoldMine(int(id), data, self) for id, data in input_data["gold_mines"].items()}
-        self.trees = {int(id): Tree(int(id), data, self) for id, data in input_data["trees"].items()}
-        self.map = Map(input_data["map"], units=self.units,
-            gold_mines=self.gold_mines, trees=self.trees)
+        self.time = input_data["time"]
+        self.units = {}
+        for data in input_data["units"]:
+            unit = Unit(self, **data)
+            self.units[unit.id] = unit
+        gold_mines = {}
+        for data in input_data["gold_mines"]:
+            gold_mine = GoldMine(self, **data)
+        trees = {}
+        for data in input_data["trees"]:
+            tree = GoldMine(self, **data)
+            trees[tree.id] = tree
+        self.map = Map(input_data["map"])
+        self.gold = input_data["gold"]
+        self.wood = input_data["wood"]
+
         self.actions = []
 
-        self.turn()
+        try:
+            self.turn()
+        except Exception:
+            self.log(traceback.extract_stack())
 
         self.output(json.dumps(self.actions))
+
+    def get_turn_number(self):
+        return self.turn_number
 
     def add_unit(self, unit):
         """
@@ -127,11 +153,10 @@ class Player:
         unit.set_position(x, y)
 
         self.actions.append({
-            "move": {
-                "unit": unit.get_id(),
-                "x": x,
-                "y": y
-            }
+            "type": "move",
+            "unit": unit.get_id(),
+            "x": x,
+            "y": y
         })
 
     def attack(self, unit, x, y):
@@ -145,11 +170,10 @@ class Player:
                 other.damage(unit.get_unit_type().get_attack_damage())
 
         self.actions.append({
-            "attack": {
-                "unit": unit.get_id(),
-                "x": x,
-                "y": y
-            }
+            "type": "attack",
+            "unit": unit.get_id(),
+            "x": x,
+            "y": y
         })
 
     def build(self, unit, unit_type, x, y):
@@ -166,12 +190,11 @@ class Player:
         self.add_unit(new_unit)
 
         self.actions.append({
-            "build": {
-                "unit": unit.get_id(),
-                "unit_type": unit_type,
-                "x": x,
-                "y": y
-            }
+            "type": "build",
+            "unit": unit.get_id(),
+            "unit_type": unit_type,
+            "x": x,
+            "y": y
         })
 
     def give(self, unit, other, gold, wood):
@@ -190,12 +213,11 @@ class Player:
             other.add_wood(wood)
 
         self.actions.append({
-            "give": {
-                "unit": unit.get_id(),
-                "other": other.get_id(),
-                "gold": gold,
-                "wood": wood
-            }
+            "type": "build",
+            "unit": unit.get_id(),
+            "other": other.get_id(),
+            "gold": gold,
+            "wood": wood
         })
 
     def cut(self, unit, x, y):
@@ -208,11 +230,10 @@ class Player:
         unit.add_wood(constants.CUT_AMOUNT)
 
         self.actions.append({
-            "cut": {
-                "unit": unit.get_id(),
-                "x": x,
-                "y": y
-            }
+            "type": "cut",
+            "unit": unit.get_id(),
+            "x": x,
+            "y": y
         })
 
     def mine(self, unit, x, y):
@@ -229,11 +250,10 @@ class Player:
             self.gold_mines.remove(gold_mine)
 
         self.actions.append({
-            "mine": {
-                "unit": unit.get_id(),
-                "x": x,
-                "y": y
-            }
+            "type": "mine",
+            "unit": unit.get_id(),
+            "x": x,
+            "y": y
         })
 
     def log(self, message):
@@ -241,16 +261,15 @@ class Player:
         Log a message to the warcode engine
         """
         self.actions.append({
-            "log": {
-                "message": message
-            }
+            "type": "log",
+            "message": message
         })
 
     def output(self, string):
         """
         Outputs data to stdout, which the warcode engine uses
         """
-        print(string)
+        print(string, flush=True)
 
     def input(self):
         """

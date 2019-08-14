@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-form warcode import constants
+from warcode import constants
 
 class Team:
     """
@@ -10,6 +10,8 @@ class Team:
         self.engine = engine
         self.gold = constants.INITIAL_GOLD
         self.wood = constants.INITIAL_WOOD
+
+        self.units = {}
 
     def get_id(self):
         """
@@ -52,3 +54,18 @@ class Team:
         Subtracts wood from our supply
         """
         self.wood -= amount
+
+    def get_units(self):
+        return self.units
+
+    def add_unit(self, unit):
+        """
+        Adds a unit to our team
+        """
+        self.units[unit.get_id()] = unit
+
+    def remove_unit(self, unit):
+        """
+        Removes a unit from our team
+        """
+        del self.units[unit.get_id()]

@@ -13,7 +13,7 @@ class Unit:
     """
     A unit.
     """
-    def __int__(self, id, x, y, unit_type, team, engine):
+    def __init__(self, id, x, y, unit_type, team, engine):
         self.id = id
         self.x = x
         self.y = y
@@ -232,7 +232,7 @@ class Unit:
 
         self.set_action_taken(True)
 
-    def give(self, x, y, gold, wood):
+    def give(self, other, gold, wood):
         """
         Give wood from yourself to another unit.  If that unit is a castle or
         fortress, add the amount to your team's gold/wood supply
@@ -246,16 +246,15 @@ class Unit:
         if self.get_wood() < wood:
             raise Exception("You don't have enough wood to share.")
 
-        unit = self.engine.get_unit_at(x, y)
         self.subtract_gold(gold)
         self.subtract_wood(wood)
 
-        if unit.get_unit_type() in (constants.CASTLE, constants.FORTRESS):
+        if other.get_unit_type() in (constants.CASTLE, constants.FORTRESS):
             self.team.add_gold(gold)
             self.team.add_wood(wood)
         else:
-            unit.add_gold(gold)
-            unit.add_wood(wood)
+            other.add_gold(gold)
+            other.add_wood(wood)
 
         self.set_action_taken(True)
 
@@ -264,3 +263,15 @@ class Unit:
         Returns the distance squared from this unit to a location
         """
         return (self.x - x)**2 + (self.y - y)**2
+
+    def to_dict(self):
+        return {
+            "id": self.get_id(),
+            "type": str(self.get_unit_type()),
+            "health": self.get_health(),
+            "team": self.get_team().get_id(),
+            "x": self.get_x(),
+            "y": self.get_y(),
+            "gold": self.get_gold(),
+            "wood": self.get_wood()
+        }

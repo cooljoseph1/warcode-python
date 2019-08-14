@@ -4,7 +4,7 @@ import json
 import tkinter
 from tkinter import filedialog, ttk, messagebox
 
-from warcode.constants import CONSTANTS
+from warcode import constants
 
 _my_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -228,7 +228,7 @@ class Window(tkinter.Tk):
             (data["width"], data["height"]),
             master=self,
             game_map=data["board"],
-            starting_locations=data["starting_locations"]
+            starting_units=data["starting_units"]
         )
 
         self.canvas.pack()
@@ -250,7 +250,7 @@ class Window(tkinter.Tk):
                 "players": self.num_players,
                 "width": self.canvas.get_map_width(),
                 "height": self.canvas.get_map_height(),
-                "starting_locations": self.canvas.get_starting_locations(),
+                "starting_units": self.canvas.get_starting_units(),
                 "board": self.canvas.get_map()
             }
             json.dump(data, file)
@@ -278,7 +278,7 @@ class Window(tkinter.Tk):
             "players": self.num_players,
             "width": self.canvas.get_map_width(),
             "height": self.canvas.get_map_height(),
-            "starting_locations": self.canvas.get_starting_locations(),
+            "starting_units": self.canvas.get_starting_units(),
             "board": self.canvas.get_map()
         }
         json.dump(data, file)
@@ -363,7 +363,7 @@ class Window(tkinter.Tk):
 
 
 class Canvas(tkinter.Canvas):
-    def __init__(self, map_size, *args, game_map=None, starting_locations=None, **kwargs):
+    def __init__(self, map_size, *args, game_map=None, starting_units=None, **kwargs):
         # Find the optimal width and height
         if "width" not in kwargs and "height" not in kwargs:
             if 2*map_size[1] > map_size[0]:
@@ -389,18 +389,15 @@ class Canvas(tkinter.Canvas):
         if game_map == None:
             self.game_map = [
                 [
-                    CONSTANTS["MAP_DATA"]["EMPTY"] for x in range(self.map_size[0])
+                    constants.EMPTY for x in range(self.map_size[0])
                 ] for y in range(self.map_size[1])
             ]
         else:
             self.game_map = game_map
 
         # Create array of starting locations for the players
-        if starting_locations is None:
-            self.starting_locations = [set() for i in range(6)] #6 players
-        else:
-            self.starting_locations = [set(tuple(location) for location in locations)
-                for locations in starting_locations] + [set() for i in range(6 - len(starting_locations))]
+        starting_units = starting_units or {}
+        self.starting_units = {(unit["x"], unit["y"]): unit for unit in starting_units}
 
         self.tool_colors = {"Empty": "white", "Block": "gray50", "Gold Mine": "gold",
             "Tree": "forest green", "Team 1": "red", "Team 2": "royal blue",
@@ -420,12 +417,11 @@ class Canvas(tkinter.Canvas):
             ] for y in range(self.map_size[1])
         ]
 
-        for i, locations in enumerate(self.starting_locations):
-            for location in locations:
-                self.itemconfig(
-                    self.squares[location[1]][location[0]],
-                    fill=self.tool_colors["Team "+str(i+1)]
-                )
+        for unit in self.starting_units.values():
+            self.itemconfig(
+                self.squares[unit["y"]][unit["x"]],
+                fill=self.tool_colors["Team " + str(unit["team"])]
+            )
 
         self.x_lines = [
             self.create_line(
@@ -460,32 +456,24 @@ class Canvas(tkinter.Canvas):
     def get_map_height(self):
         return self.map_size[1]
 
-    def get_starting_locations(self):
-        """
-        Returns a list of the nonempty starting locations
-        """
-        return [list(locations) for locations in self.starting_locations if
-            len(locations) > 0]
-
-    def add_starting_location(self, x, y, team):
-        """
-        Adds a location to a team's starting locations, returning True if the
-        location was not already in there
-        """
-        if (x, y) in self.starting_locations[team - 1]:
+    def add_starting_unit(self, x, y, type, team):
+        new_unit = {"x": x, "y": y, "type": str(type), "team": team}
+        if self.starting_units.get((x, y)) == new_unit:
             return False
-        else:
-            self.starting_locations[team - 1].add((x, y))
+        self.starting_units[(x, y)] = new_unit
+        return True
 
-    def get_color(self, num):
-        type = CONSTANTS["MAP_DATA"][str(num)]
-        if type == "EMPTY":
+    def get_starting_units(self):
+        return list(self.starting_units.values())
+
+    def get_color(self, square):
+        if square == constants.EMPTY:
             return self.tool_colors["Empty"]
-        if type == "BLOCK":
+        if square == constants.BLOCK:
             return self.tool_colors["Block"]
-        if type == "TREE":
+        if square == constants.TREE:
             return self.tool_colors["Tree"]
-        if type == "GOLD_MINE":
+        if square == constants.GOLD_MINE:
             return self.tool_colors["Gold Mine"]
 
     def set_square(self, x, y, tool):
@@ -496,29 +484,23 @@ class Canvas(tkinter.Canvas):
 
         changed = False
         if tool in ("Empty", "Team 1", "Team 2", "Team 3", "Team 4", "Team 5", "Team 6"):
-            type = "EMPTY"
+            square = constants.EMPTY
         elif tool == "Gold Mine":
-            type = "GOLD_MINE"
+            square = constants.GOLD_MINE
         elif tool == "Tree":
-            type = "TREE"
+            square = constants.TREE
         elif tool == "Block":
-            type = "BLOCK"
+            square = constants.BLOCK
 
-        if self.game_map[y][x] != CONSTANTS["MAP_DATA"][type]:
+        if self.game_map[y][x] != square:
             changed = True
-            self.game_map[y][x] = CONSTANTS["MAP_DATA"][type]
+            self.game_map[y][x] = square
 
         if self.itemcget(self.squares[y][x], "fill") != self.tool_colors[tool]:
             self.itemconfig(self.squares[y][x], fill=self.tool_colors[tool])
 
-        for team, positions in enumerate(self.starting_locations):
-            if (x, y) in positions:
-                if "Team " + str(team + 1) != tool:
-                    changed = True
-                    positions.remove((x, y))
-
         if tool in ("Team 1", "Team 2", "Team 3", "Team 4", "Team 5", "Team 6"):
-            if self.add_starting_location(x, y, int(tool[-1])):
+            if self.add_starting_unit(x, y, constants.FORTRESS, int(tool[-1])):
                 changed = True
 
         return changed
@@ -555,6 +537,7 @@ class Canvas(tkinter.Canvas):
         new_x = int((location[0] - 2) * self.map_size[0] / (self.winfo_width() - 5))
         new_y = int((location[1] - 2) * self.map_size[1] / (self.winfo_height() - 5))
         return (new_x, new_y)
+
 
 def main():
     window = Window()

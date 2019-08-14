@@ -116,7 +116,8 @@ The types of actions are:
 #### Move
 Moves a unit to a location.  Json format:
 ```
-"move": {
+{
+    "type": "move",
     "unit": <unit_id>,
     "x": <x_position>,
     "y": <y_position>
@@ -126,7 +127,8 @@ Moves a unit to a location.  Json format:
 #### Attack
 Attacks a location.  Note that for totems to heal and mines to explode, they successive the "attack" command as well.  Json format:
 ```
-"attack": {
+{
+    "type": "attack",
     "unit": <unit_id>,
     "x": <x_position>,
     "y": <y_position>
@@ -136,7 +138,8 @@ Attacks a location.  Note that for totems to heal and mines to explode, they suc
 #### Build
 Builds a new unit.  Json format:
 ```
-"build": {
+{
+    "type": "build",
     "unit": <unit_id>,
     "unit_type": <unit_type>,
     "x": <x_position>,
@@ -147,7 +150,8 @@ Builds a new unit.  Json format:
 #### Give
 Transfers resources from one unit to another unit.  Json format:
 ```
-"give": {
+{
+    "type": "give",
     "unit": <unit_id>,
     "other": <other_id>,
     "gold": <gold>,
@@ -158,7 +162,8 @@ Transfers resources from one unit to another unit.  Json format:
 #### Cut
 Cuts wood from a tree.  Json format:
 ```
-"cut": {
+{
+    "type": "cut",
     "unit": <unit_id>,
     "x": <x_position>,
     "y": <y_position>
@@ -168,7 +173,8 @@ Cuts wood from a tree.  Json format:
 #### Mine
 Mines gold from a gold mine.  Json format:
 ```
-"mine": {
+{
+    "type": "mine",
     "unit": <unit_id>,
     "x": <x_position>,
     "y": <y_position>
@@ -178,7 +184,8 @@ Mines gold from a gold mine.  Json format:
 #### Log
 Logs a message.  Json format:
 ```
-"log": {
+{
+    "type": "log",
     "message": <message>
 }
 ```

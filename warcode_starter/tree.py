@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 class Tree:
-    def __init__(self, id, data, player):
-        self.id = id
-        self.wood = data["wood"]
-        self.x = data["x"]
-        self.y = data["y"]
+    def __init__(self, player, id, wood, x, y):
         self.player = player
+        self.id = id
+        self.wood = wood
+        self.x = x
+        self.y = y
 
     def get_x(self):
         return self.x
