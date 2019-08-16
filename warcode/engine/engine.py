@@ -2,20 +2,25 @@
 import json
 import random
 import traceback
+import os
 
 from warcode import constants
 from warcode.exceptions import InvalidAction
 from warcode.engine import Unit, Map, GoldMine, Player, Tree, Team
 
+my_dir = os.path.realpath(os.path.dirname(__file__))
 
 class Engine:
     """
     Overall engine class.  Runs a game.
     """
 
-    def __init__(self, map_name, players, quiet=False):
+    def __init__(self, map_name, players, save_file, quiet=False):
         self.game_map = Map(map_name)
         self.quiet = quiet
+        if not save_file.endswith(".wcr"):
+            save_file += ".wcr"
+        self.save_file = save_file
 
         self.ids_given = set()
         self.things = {}
@@ -45,15 +50,66 @@ class Engine:
 
         self.finished = False
         self.turn = 0
-        self.winner = None
 
-        game_data = {
+        self.game_data = {
             "map": self.game_map.get_board(),
             "players": [{"team": player.team.get_id()} for player in self.players],
             "initial_units": [unit.to_dict() for unit in self.units.values()],
             "turns": [],
             "winner": None
         }
+
+    def play(self):
+        """
+        Play the game, returning the winning player
+        """
+        self.turn += 1
+        for player in self.players:
+            data = self.get_first_turn_data(player)
+            player.first_turn(data)
+
+        while not self.finished:
+            self.step()
+
+    def step(self):
+        """
+        Goes through each player's turn
+        """
+        try:
+            self.turn += 1
+            self.game_data["turns"].append([])
+            for player in self.players:
+                data = self.get_data(player)
+                actions = player.turn(data)
+                self.process_actions(actions, player.get_team())
+
+            for player in self.players[:]:
+                if not player.is_alive():
+                    self.remove_player(player)
+
+            if len(self.players) <= 1 or self.turn >= 1000:
+                self.end()
+        except KeyboardInterrupt:
+            print("Keyboard interrupt. Cleaning up nicely...")
+            self.clean_up()
+
+    def end(self):
+        """
+        End the game and clean up
+        """
+        if len(self.players) == 0:
+            self.game_data["winner"] = "TIE"
+        else:
+            # TODO implement tie breaking
+            self.game_data["winner"] = random.choice(self.players).get_name()
+
+        self.clean_up()
+
+    def get_winner(self):
+        """
+        Returns the name of the winning player
+        """
+        return self.game_data["winner"]
 
     def get_game_map(self):
         return self.game_map
@@ -133,57 +189,6 @@ class Engine:
     def remove_player(self, player):
         self.players.remove(player)
 
-    def play(self):
-        """
-        Play the game, returning the winning player
-        """
-        for player in self.players:
-            data = self.get_first_turn_data(player)
-            player.first_turn(data)
-
-        while not self.finished:
-            self.step()
-
-    def step(self):
-        """
-        Goes through each player's turn
-        """
-        try:
-            self.turn += 1
-            for player in self.players:
-                data = self.get_data(player)
-                actions = player.turn(data)
-                self.process_actions(actions)
-
-            for player in self.players[:]:
-                if not player.is_alive():
-                    self.remove_player(player)
-
-            if len(self.players) <= 1 or self.turn >= 1000:
-                self.end()
-        except KeyboardInterrupt:
-            self.end()
-
-    def end(self):
-        """
-        End the game and clean up
-        """
-        self.finished = True
-        if len(self.players) == 0:
-            self.winner = "TIE"
-        else:
-            # TODO implement tie breaking
-            self.winner = random.choice(self.players).get_name()
-
-        for player in self.players:
-            player.clean_up(self.winner)
-
-    def get_winner(self):
-        """
-        Returns the name of the winning player
-        """
-        return self.winner
-
     def get_first_turn_data(self, player):
         """
         Get data for first turn
@@ -233,40 +238,91 @@ class Engine:
 
         return json.dumps(data)
 
-    def process_actions(self, action_string):
+    def process_actions(self, action_string, team):
         """
         Process actions from a json string
         """
         data = json.loads(action_string)
         for action in data:
-            self.complete_action(action)
+            self.complete_action(action, team)
 
-    def complete_action(self, action):
+    def complete_action(self, action, team):
         """
         Processes a single action
         """
         try:
-            if action["type"] == "attack":
+            # Check to make sure they aren't trying to control someone else's
+            # units.
+            if action["type"] in (constants.ATTACK, constants.BUILD, constants.GIVE, constants.CUT, constants.MINE):
+                unit = self.units[action["unit"]]
+                if unit.team != team:
+                    raise InvalidAction("You can't control units that are not your own.")
+
+            # Process the action
+            if action["type"] == constants.ATTACK:
                 unit = self.units[action["unit"]]
                 unit.attack(action["x"], action["y"])
-            elif action["type"] == "build":
+            elif action["type"] == constants.BUILD:
                 unit = self.units[action["unit"]]
                 unit.build(action["unit_type"], action["x"], action["y"])
-            elif action["type"] == "give":
+            elif action["type"] == constants.GIVE:
                 unit = self.units[action["unit"]]
                 other = self.units[action["other"]]
                 unit.give(other, action["gold"], action["wood"])
-            elif action["type"] == "cut":
+            elif action["type"] == constants.CUT:
                 unit = self.units[action["unit"]]
                 unit.cut(action["x"], action["y"])
-            elif action["type"] == "mine":
+            elif action["type"] == constants.MINE:
                 unit = self.units[action["unit"]]
                 unit.mine(action["x"], action["y"])
-            elif action["type"] == "log":
-                if not self.quiet:
-                    print(action["message"])
+            elif action["type"] == constants.LOG:
+                pass # Logs are dealt with later
             else:
                 raise InvalidAction(action)
         except Exception:
             if not self.quiet:
                 traceback.print_exc()
+        # Save the action to our action log if it was valid, and print it out
+        else:
+            short = self.short_version(action)
+            if action["type"] != constants.LOG:
+                # Don't save logs, because who cares about those?
+                self.save_action(short)
+            if not self.quiet:
+                print(*short)
+
+
+    def short_version(self, action):
+        """
+        Create a shorter version of an action, useful for saving it in a file
+        without taking up a lot of room
+        """
+        if action["type"] == constants.ATTACK:
+            return (constants.ATTACK, action["unit"], action["x"], action["y"])
+        elif action["type"] == constants.BUILD:
+            return (constants.BUILD, action["unit"], action["unit_type"], action["x"], action["y"])
+        elif action["type"] == constants.GIVE:
+            return (constants.GIVE, action["unit"], action["other"], action["gold"], action["wood"])
+        elif action["type"] == constants.CUT:
+            return (constants.CUT, action["unit"], action["x"], action["y"])
+        elif action["type"] == constants.MINE:
+            return (constants.MINE, action["unit"], action["x"], action["y"])
+        elif action["type"] == constants.LOG:
+            return (constants.LOG, action["message"])
+        return None
+
+    def save_action(self, action):
+        self.game_data["turns"][-1].append(action)
+
+    def clean_up(self):
+        self.finished = True
+        for player in self.players:
+            player.clean_up(self.game_data["winner"])
+
+        self.save()
+
+    def save(self):
+        print("Saving...")
+        with open(os.path.join(my_dir, os.pardir, "saves", self.save_file), 'w') as f:
+            f.write(json.dumps(self.game_data))
+        print("Done!")

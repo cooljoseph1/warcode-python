@@ -13,6 +13,13 @@ TREE = _data["TREE"]
 GOLD_MINE = _data["GOLD_MINE"]
 INVISIBLE = _data["INVISIBLE"]
 
+ATTACK = _data["ATTACK"]
+BUILD = _data["BUILD"]
+GIVE = _data["GIVE"]
+MINE = _data["MINE"]
+CUT = _data["CUT"]
+LOG = _data["LOG"]
+
 MINE_AMOUNT = _data["MINE_AMOUNT"]
 CUT_AMOUNT = _data["CUT_AMOUNT"]
 GOLD_MINE_HEALTH = _data["GOLD_MINE_HEALTH"]

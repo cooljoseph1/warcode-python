@@ -3,6 +3,7 @@ import random
 from subprocess import PIPE
 from psutil import Popen
 import os
+import time
 
 my_dir = os.path.realpath(os.path.dirname(__file__))
 
@@ -71,10 +72,10 @@ class Player:
         """
         Clean up at the end of the game
         """
-        print("{} won the game!".format(winner), file=self.process.stdin)
+        self.process.stdin.write("{} won the game!\n".format(winner).encode('utf-8'))
+        # Give them a millisecond to clean up their code.
+        time.sleep(0.001)
         self.process.kill()
-        #self.process.stdin.close()
-        #self.process.stdout.close()
 
     def to_dict(self):
         return {

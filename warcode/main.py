@@ -8,5 +8,5 @@ from warcode.engine import Engine
 
 
 if __name__ == "__main__":
-    engine = Engine("Arrow", ["exampleplayer.py", "exampleplayer.py"])
+    engine = Engine("Arrow", ["exampleplayer.py", "exampleplayer.py"], "test")
     engine.play()

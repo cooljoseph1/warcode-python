@@ -170,7 +170,7 @@ class Player:
                 other.damage(unit.get_unit_type().get_attack_damage())
 
         self.actions.append({
-            "type": "attack",
+            "type": constants.ATTACK,
             "unit": unit.get_id(),
             "x": x,
             "y": y
@@ -190,7 +190,7 @@ class Player:
         self.add_unit(new_unit)
 
         self.actions.append({
-            "type": "build",
+            "type": constants.BUILD,
             "unit": unit.get_id(),
             "unit_type": unit_type,
             "x": x,
@@ -213,7 +213,7 @@ class Player:
             other.add_wood(wood)
 
         self.actions.append({
-            "type": "build",
+            "type": constants.BUILD,
             "unit": unit.get_id(),
             "other": other.get_id(),
             "gold": gold,
@@ -230,7 +230,7 @@ class Player:
         unit.add_wood(constants.CUT_AMOUNT)
 
         self.actions.append({
-            "type": "cut",
+            "type": constants.CUT,
             "unit": unit.get_id(),
             "x": x,
             "y": y
@@ -250,7 +250,7 @@ class Player:
             self.gold_mines.remove(gold_mine)
 
         self.actions.append({
-            "type": "mine",
+            "type": constants.MINE,
             "unit": unit.get_id(),
             "x": x,
             "y": y
@@ -261,7 +261,7 @@ class Player:
         Log a message to the warcode engine
         """
         self.actions.append({
-            "type": "log",
+            "type": constants.LOG,
             "message": message
         })
 

@@ -125,7 +125,7 @@ Moves a unit to a location.  Json format:
 ```
 
 #### Attack
-Attacks a location.  Note that for totems to heal and mines to explode, they successive the "attack" command as well.  Json format:
+Attacks a location.  Note that for totems to heal and mines to explode, they use the "attack" command as well.  Json format:
 ```
 {
     "type": "attack",

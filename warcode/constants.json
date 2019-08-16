@@ -5,6 +5,13 @@
     "GOLD_MINE": "G",
     "INVISIBLE": "I",
 
+    "ATTACK": "ATTACK",
+    "BUILD": "BUILD",
+    "GIVE": "GIVE",
+    "MINE": "MINE",
+    "CUT": "CUT",
+    "LOG": "LOG",
+
     "MINE_AMOUNT": 10,
     "CUT_AMOUNT": 5,
     "GOLD_MINE_HEALTH": 500,
