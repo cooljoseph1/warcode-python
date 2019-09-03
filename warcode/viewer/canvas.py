@@ -7,12 +7,11 @@ class Canvas(tkinter.Canvas):
     """
     This is the canvas used to draw the game
     """
-    def __init__(width, height, map_width, map_height):
-        super().__init__(width=width, height=height)
-        self.map_width = map_width
-        self.map_height = map_height
-
-        self.pack()
+    def __init__(master, width, height, replay):
+        super().__init__(master, width=width, height=height)
+        self.map_width = replay.width
+        self.map_height = replay.height
+        self.replay = replay
 
         self.width_ratio = self.winfo_width() / self.map_width
         self.height_ratio = self.winfo_height() / self.map_height
@@ -31,14 +30,14 @@ class Canvas(tkinter.Canvas):
             ] for y in range(self.map_height)
         ]
 
-    def draw(self, data):
+    def draw(self):
         """
         Draw the game state given a dictionary of data.
         The units and actions are dictionaries as well
         """
-        board = data["board"]
-        units = data["units"]
-        actions = data["actions"]
+        board = self.replay.map
+        units = [unit for unit in self.replay.units.values() if unit.health > 0]
+        actions = self.replay.turns[self.replay.current_turn][self.replay.current_turn_action]
 
         # Update the baord
         self.update_board(board)
@@ -96,38 +95,37 @@ class Canvas(tkinter.Canvas):
 
     def draw_unit(self, unit):
         """
-        Draw a unit given its x, y, type, health, and team
+        Draw a unit
         """
-        x, y, type, health, team = unit["x"], unit["y"], unit["type"], unit["health"], unit["team"]
 
         # Set background color to the team's color
-        color = self.get_team_color(team)
-        self.set_square_color(x, y, color)
+        color = self.get_team_color(unit.team)
+        self.set_square_color(unit.x, unit.y, color)
 
         # Create the image
-        image = self.get_image(type)
+        image = self.get_image(unit.type)
         self.create_image(
-            x * self.width_ratio,
-            y * self.height_ratio,
+            unit.x * self.width_ratio,
+            unit.y * self.height_ratio,
             image=image,
             tags=("unit", "image")
         )
 
         # Create the health bar
         self.create_rectangle(
-            (x + 0.1) * self.width_ratio,
-            (y + 0.8) * self.height_ratio,
-            (x + 0.9) * self.width_ratio,
-            (y + 0.9) * self.height_ratio,
+            (unit.x + 0.1) * self.width_ratio,
+            (unit.y + 0.8) * self.height_ratio,
+            (unit.x + 0.9) * self.width_ratio,
+            (unit.y + 0.9) * self.height_ratio,
             fill="gray",
             outline="black",
             tags=("unit", "health bar")
         )
         self.create_rectangle(
-            (x + 0.1) * self.width_ratio,
-            (y + 0.8) * self.height_ratio,
-            (x + 0.1 + 0.8 *  health / type.initial_health) * self.width_ratio,
-            (y + 0.9) * self.height_ratio,
+            (unit.x + 0.1) * self.width_ratio,
+            (unit.y + 0.8) * self.height_ratio,
+            (unit.x + 0.1 + 0.8 *  unit.health / unit.type.initial_health) * self.width_ratio,
+            (unit.y + 0.9) * self.height_ratio,
             fill="yellow",
             tags=("unit", "health bar")
         )
@@ -174,18 +172,14 @@ class Canvas(tkinter.Canvas):
         """
         Draw an attack action
         """
-        start_x = action["unit_x"]
-        start_y = action["unit_y"]
-        end_x = action["x"]
-        end_y = action["y"]
-        team = action["unit_team"]
-        color = self.get_team_color(team)
+        unit = self.replay.units[action.x]
+        color = self.get_team_color(unit.team)
 
         self.create_line(
-            (start_x + 0.5) * self.width_ratio,
-            (start_y + 0.5) * self.height_ratio,
-            (end_x + 0.5) * self.width_ratio,
-            (end_y + 0.5) * self.height_ratio,
+            (unit.x + 0.5) * self.width_ratio,
+            (unit.y + 0.5) * self.height_ratio,
+            (action.x + 0.5) * self.width_ratio,
+            (action.y + 0.5) * self.height_ratio,
             fill=color,
             tags=("action", "attack")
         )

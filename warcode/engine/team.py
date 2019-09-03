@@ -5,9 +5,8 @@ class Team:
     """
     A team. It represents the resources a player has.
     """
-    def __init__(self, id, engine):
+    def __init__(self, id):
         self.id = id
-        self.engine = engine
         self.gold = constants.INITIAL_GOLD
         self.wood = constants.INITIAL_WOOD
 
@@ -56,6 +55,9 @@ class Team:
         self.wood -= amount
 
     def get_units(self):
+        """
+        Returns the units a team has
+        """
         return self.units
 
     def add_unit(self, unit):

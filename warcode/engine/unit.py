@@ -173,7 +173,7 @@ class Unit:
     def build(self, unit_type, x, y):
         """
         Creates a new unit of type unit_type at location, throwing an error if
-        it is an illegal move
+        it is an illegal move.  Returns the new id.
         """
         if self.get_action_taken():
             raise IllegalBuildException("You can only take one action per turn.")
@@ -190,9 +190,10 @@ class Unit:
 
         self.team.subtract_gold(unit_type.get_gold_cost())
         self.team.subtract_wood(unit_type.get_wood_cost())
-        self.engine.create_unit(x, y, unit_type, self.team)
+        id = self.engine.create_unit(x, y, unit_type, self.team)
 
         self.set_action_taken(True)
+        return id
 
     def mine(self, x, y):
         """

@@ -27,7 +27,10 @@ class Engine:
 
         self.teams = {}
         for i in range(self.game_map.get_num_teams()):
-            self.create_team()
+            self.teams[i + 1] = Team(i + 1)
+
+        self.things.update(self.teams)
+
         self.gold_mines = {}
         for x, y in self.game_map.get_gold_mine_locations():
             self.create_gold_mine(x, y)
@@ -128,12 +131,6 @@ class Engine:
     def get_teams(self):
         return self.teams
 
-    def create_team(self):
-        id = self.generate_id()
-        team = Team(id, self)
-        self.teams[id] = team
-        self.things[id] = team
-
     def remove_team(self, team):
         del self.teams[team.get_id()]
         del self.things[team.get_id()]
@@ -142,12 +139,17 @@ class Engine:
         return self.units
 
     def create_unit(self, x, y, unit_type, team):
+        """
+        Creates a new unit, returning its id
+        """
         id = self.generate_id()
         unit = Unit(id, x, y, unit_type, team, self)
         self.units[id] = unit
         self.things[id] = unit
         team.add_unit(unit)
         self.game_map.set_square_at(x, y, id)
+
+        return unit
 
     def remove_unit(self, unit):
         del self.units[unit.get_id()]
@@ -264,7 +266,8 @@ class Engine:
                 unit.attack(action["x"], action["y"])
             elif action["type"] == constants.BUILD:
                 unit = self.units[action["unit"]]
-                unit.build(action["unit_type"], action["x"], action["y"])
+                id = unit.build(action["unit_type"], action["x"], action["y"])
+                action["other"] = id
             elif action["type"] == constants.GIVE:
                 unit = self.units[action["unit"]]
                 other = self.units[action["other"]]
@@ -300,7 +303,7 @@ class Engine:
         if action["type"] == constants.ATTACK:
             return (constants.ATTACK, action["unit"], action["x"], action["y"])
         elif action["type"] == constants.BUILD:
-            return (constants.BUILD, action["unit"], action["unit_type"], action["x"], action["y"])
+            return (constants.BUILD, action["unit"], action["unit_type"], action["other"], action["x"], action["y"])
         elif action["type"] == constants.GIVE:
             return (constants.GIVE, action["unit"], action["other"], action["gold"], action["wood"])
         elif action["type"] == constants.CUT:
